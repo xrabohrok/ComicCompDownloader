@@ -35,7 +35,8 @@ var fighterLinks = Object.values(fighters).map(f => {
         rounds: f.rounds,
         links: f.link,
         artists: f.artists,
-        faction: f.faction[0]
+        faction: f.faction[0],
+        context: f.context
     }
 })
 
@@ -47,29 +48,36 @@ var errorBuffer = []
 //get gallery info
 var fighter = fighterLinks.find((f) => f.id === 180)
 
-// for (var round = 0; round < fighter.rounds.length; round += 1) {
-    var link = fighter.links[0]
+maybeMakeDir(`./${fighter.name}`)
+for (var roundIndex = 0; roundIndex < fighter.rounds.length; roundIndex += 1) {
+    var link = fighter.links[roundIndex]
+    var roundNumber = fighter.rounds[roundIndex]
+    var context = fighter.context[roundIndex]
     if (!isNotALink(link) && isImgurLink(link)) {
         var comicBuffer = []
+        comicBuffer.push(`${fighter.name} == Round : ${roundNumber} | ${context}`)
         var imgurHash = getGalleryHash(link)
         var result = await axiosInst.get(`/album/${imgurHash}`)
             .catch(error => {
                 if (error.response) {
-                    console.log("error:")
-                    console.log(error.response.status)
-                    console.log(error.response)
-                    errorBuffer.push[`${fighter.name} - ERROR - ${error.response.status}`]
+                    const erMsg = `${fighter.name} - ERROR - ${error.response.status}`
+                    errorBuffer.push[erMsg]
+                    console.error(erMsg)
                 }
                 else {
-                    errorBuffer.push[`${fighter.name} - ERROR - problem making request`]
+                    const erMsg = `${fighter.name} - ERROR - problem making request`
+                    console.error(erMsg)
+                    errorBuffer.push[erMsg]
                 }
             })
-        //if(!result) continue;
+        if(!result) continue;
         console.log(`${fighter.name} - ${result.data.data.images.length} images to download`)
+        maybeMakeDir(`./${fighter.name}/${roundNumber}`)
         for (var i = 0; i < result.data.data.images.length; i += 1) {
+
             var listing = result.data.data.images[i]
             var extension = listing.type.split('\/')[1]
-            downloadFile(listing.link, `./${i}.${extension}`).catch(
+            downloadFile(listing.link, `./${fighter.name}/${roundNumber}/${i}.${extension}`).catch(
                 (error) => {
                     if (error.response) {
                         errorBuffer.push[`${fighter.name} - ERROR - ${error.response.status}`]
@@ -81,5 +89,7 @@ var fighter = fighterLinks.find((f) => f.id === 180)
     }
     else {
         console.log('Not on imgur, skipping')
+        errorBuffer.push(`skipped ${fighter.name} == Round : ${roundNumber} | ${context}`)
+
     }
-// }
+}
