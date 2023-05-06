@@ -20,6 +20,7 @@ import { isNotALink, isImgurLink, getGalleryHash } from "./imgur.mjs"
 import { downloadFile, maybeMakeDir, writeTextFile } from './fileops.mjs';
 
 import axios from "axios"
+import { resourceLimits } from 'worker_threads'
 
 
 var axiosInst = axios.create({
@@ -51,8 +52,8 @@ var errorBuffer = []
 maybeMakeDir(`./${ouputBaseDir}`)
 
 //nuclear safety, delete to unleash hell
-fighterLinks = fighterLinks.slice(0, 10)
-console.log('only attempting 10 today :-)')
+// fighterLinks = fighterLinks.slice(0, 10)
+// console.log('only attempting 10 today :-)')
 
 for (var fighter of fighterLinks) {
     maybeMakeDir(`./${ouputBaseDir}/${fighter.name}`)
@@ -78,7 +79,7 @@ for (var fighter of fighterLinks) {
                     }
                 })
             if (!result) continue;
-            console.log(`${fighter.name} - ${result.data.data.images.length} images to download`)
+            console.log(`${fighter.name} - Round ${roundNumber} - ${result.data.data.images.length} images to download`)
             const illegalChars = /\*|\\|\//ig
             const safeTitle = !result.data.data.title ? "No title" : result.data.data.title.replace(illegalChars, '')
             const roundFolder = `${roundNumber}-${safeTitle}`
@@ -88,7 +89,8 @@ for (var fighter of fighterLinks) {
 
                 var listing = result.data.data.images[i]
                 comicBuffer.push(`Page ${i} -`)
-                comicBuffer.push(`\t ${result.data.data.images[i].description == "null" ? '--': result.data.data.images[i].description}`)
+                comicBuffer.push(`\t ${result.data.data.images[i].description == "null" || !result.data.data.images[i].description 
+                    ? '--' : result.data.data.images[i].description}`)
                 var extension = listing.type.split('\/')[1]
                 downloadFile(listing.link, `./${ouputBaseDir}/${fighter.name}/${roundFolder}/${i}.${extension}`).catch(
                     (error) => {
