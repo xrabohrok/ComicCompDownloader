@@ -10,7 +10,7 @@ const isImgurLink= function(input){
 
 const getGalleryHash = function(imgurLink){
     const imgurIDPart = /\/(a|gallery)\/.......$/i
-    var parts = link.match(imgurIDPart)
+    var parts = imgurLink.match(imgurIDPart)
     return parts[0].split("/")[2]
 }
 
