@@ -1,10 +1,16 @@
 var args = process.argv.slice(2)
 const outputLoc = args.findIndex(a => a.includes("--output"))
 var ouputBaseDir = "W4R"
-if (outputLoc > 0) {
+if (outputLoc >= 0) {
     ouputBaseDir = args[outputLoc + 1]
 }
-const subdir = args[+1]
+const resumeIdIndex = args.findIndex(a => a.includes("--resumeId"))
+var resumeId = -1
+if(resumeIdIndex >= 0){
+    console.log('continuing...')
+    resumeId = parseInt(args[resumeIdIndex + 1], 10)
+}
+console.log(args)
 
 import { readFile } from 'fs/promises';
 
@@ -20,7 +26,6 @@ import { isNotALink, isImgurLink, getGalleryHash } from "./imgur.mjs"
 import { downloadFile, maybeMakeDir, writeTextFile } from './fileops.mjs';
 
 import axios from "axios"
-import { resourceLimits } from 'worker_threads'
 
 
 var axiosInst = axios.create({
@@ -55,6 +60,14 @@ maybeMakeDir(`./${ouputBaseDir}`)
 // fighterLinks = fighterLinks.slice(0, 10)
 // console.log('only attempting 10 today :-)')
 
+if(resumeId > -1){
+    var continueIndex = fighterLinks.findIndex(fl => fl.id === resumeId)
+    if( continueIndex > -1){
+        console.log(`Found continue id (${resumeId}) at index ${continueIndex}, ${ (continueIndex/fighterLinks.length *100).toPrecision(1)}% in.`)
+        fighterLinks = fighterLinks.slice(continueIndex-1)
+    }
+}
+
 for (var fighter of fighterLinks) {
     maybeMakeDir(`./${ouputBaseDir}/${fighter.name}`)
     for (var roundIndex = 0; roundIndex < fighter.rounds.length; roundIndex += 1) {
@@ -81,7 +94,9 @@ for (var fighter of fighterLinks) {
             if (!result) continue;
             console.log(`${fighter.name} - Round ${roundNumber} - ${result.data.data.images.length} images to download`)
             const illegalChars = /\*|\\|\//ig
-            const safeTitle = !result.data.data.title ? "No title" : result.data.data.title.replace(illegalChars, '')
+            var safeTitle = !result.data.data.title ? "No title" : result.data.data.title.replace(illegalChars, '')
+            //Damn you pancake lord
+            safeTitle = safeTitle.slice(0,150)
             const roundFolder = `${roundNumber}-${safeTitle}`
             comicBuffer.push(safeTitle)
             maybeMakeDir(`./${ouputBaseDir}/${fighter.name}/${roundFolder}`)
