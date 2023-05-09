@@ -11,15 +11,87 @@ if (resumeIdIndex >= 0) {
     resumeId = parseInt(args[resumeIdIndex + 1], 10)
 }
 
+var mode = "rayuba"
+const hnhindex = args.findIndex(a => a.includes("--hnh"))
+if(hnhindex >= 0){
+    console.log('pulling Hunters and Horrors')
+    mode = 'hnh'
+}
+
+
 const findMissingFlag = args.findIndex(a => a.includes("--findMissing"))
 const findMissing = findMissingFlag > -1
 console.log(args)
 
 import { readFile } from 'fs/promises';
 
-const fighters = JSON.parse(
-    await readFile(new URL('./allfighters.json', import.meta.url))
-)
+var fighterLinks = []
+
+if(mode === "rayuba"){
+    const fighters = JSON.parse(
+        await readFile(new URL('./allfighters.json', import.meta.url))
+    )
+    fighterLinks = Object.values(fighters).map(f => {
+
+        return {
+            id: f.id,
+            name: f.name,
+            rounds: f.rounds,
+            links: f.link,
+            artists: f.artists,
+            faction: f.faction[0],
+            context: f.context
+        }
+    })
+}
+else if(mode === "hnh"){
+    const rounds = JSON.parse(
+        await readFile(new URL('./hnh-fighters.json', import.meta.url))
+    )
+    const fighters = Object.keys(rounds).flatMap(l => {
+        return rounds[l].map(f => {return {...f, round: l}})
+    })
+    var count = 0
+    var fighterListing = Object.values(fighters).flatMap(f => {
+        return [
+            [{
+                fighter: f.hunter,
+                link: f.hunter_link,
+                faction: "hunter",
+                round: f.round
+            },
+            {
+                fighter: f.horror,
+                link: f.horror_link,
+                faction: "horror",
+                round: f.round
+            }]
+        ]
+    })
+    var fighterMap = {}
+    fighterListing.forEach(l => {
+        console.log(l)
+        if(!(l.fighter in fighterMap)){
+            count += 1
+            fighterMap[l] = {
+                id: count,
+                name: l.fighter,
+                rounds: [l.round],
+                links: [l.link],
+                artists: "",
+                faction: l.faction,
+                context: ["fight"]
+            }
+        }else{
+            fighterMap[l].rounds.push(l.round)
+            fighterMap[l].links.push(l.link)    
+            fighterMap[l].context.push("fight")
+        }
+    })
+    fighterLinks = Object.values( fighterMap)
+
+
+}
 
 const apiKey = JSON.parse(
     await readFile(new URL('./apikey.json', import.meta.url))
@@ -37,31 +109,20 @@ var axiosInst = axios.create({
     }
 })
 
-console.log(`Fighters: ${Object.keys(fighters).length}`)
-
-/////////////////////////////////////////////////
-// reduce fighters to the stuff I care about
-var fighterLinks = Object.values(fighters).map(f => {
-
-    return {
-        id: f.id,
-        name: f.name,
-        rounds: f.rounds,
-        links: f.link,
-        artists: f.artists,
-        faction: f.faction[0],
-        context: f.context
-    }
-})
 
 // console.log(fighterLinks[0])
 
 var errorBuffer = []
 maybeMakeDir(`./${ouputBaseDir}`)
 
+console.log(`Fighters: ${fighterLinks.length}`)
+
 //nuclear safety, delete to unleash hell
-// fighterLinks = fighterLinks.slice(0, 10)
-// console.log('only attempting 10 today :-)')
+
+fighterLinks = fighterLinks.slice(0, 10)
+console.log('only attempting 10 today :-)')
+console.log(fighterLinks[0])
+process.exit()
 
 if (resumeId > -1) {
     var continueIndex = fighterLinks.findIndex(fl => fl.id === resumeId)
