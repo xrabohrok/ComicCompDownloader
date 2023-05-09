@@ -16,6 +16,7 @@ const hnhindex = args.findIndex(a => a.includes("--hnh"))
 if(hnhindex >= 0){
     console.log('pulling Hunters and Horrors')
     mode = 'hnh'
+    ouputBaseDir = 'HnH'
 }
 
 
@@ -67,28 +68,27 @@ else if(mode === "hnh"){
                 round: f.round
             }]
         ]
-    })
+    }).flat(1)
     var fighterMap = {}
     fighterListing.forEach(l => {
-        console.log(l)
         if(!(l.fighter in fighterMap)){
             count += 1
-            fighterMap[l] = {
+            fighterMap[l.fighter] = {
                 id: count,
                 name: l.fighter,
                 rounds: [l.round],
-                links: [l.link],
+                links: [derive_cubari_link(l.link)],
                 artists: "",
                 faction: l.faction,
                 context: ["fight"]
             }
         }else{
-            fighterMap[l].rounds.push(l.round)
-            fighterMap[l].links.push(l.link)    
-            fighterMap[l].context.push("fight")
+            fighterMap[l.fighter].rounds.push(l.round)
+            fighterMap[l.fighter].links.push(derive_cubari_link(l.link))    
+            fighterMap[l.fighter].context.push("fight")
         }
     })
-    fighterLinks = Object.values( fighterMap)
+    fighterLinks = Object.values(fighterMap).sort((a,b)=> a.name.localeCompare(b.name))
 
 
 }
@@ -97,7 +97,7 @@ const apiKey = JSON.parse(
     await readFile(new URL('./apikey.json', import.meta.url))
 )
 
-import { isNotALink, isImgurLink, getGalleryHash } from "./imgur.mjs"
+import { isNotALink, isImgurLink, getGalleryHash, derive_cubari_link } from "./imgur.mjs"
 import { downloadFile, maybeMakeDir, writeTextFile } from './fileops.mjs';
 
 import axios from "axios"
@@ -121,7 +121,7 @@ console.log(`Fighters: ${fighterLinks.length}`)
 
 fighterLinks = fighterLinks.slice(0, 10)
 console.log('only attempting 10 today :-)')
-console.log(fighterLinks[0])
+console.log(fighterLinks)
 process.exit()
 
 if (resumeId > -1) {
