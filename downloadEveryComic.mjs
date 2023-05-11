@@ -90,7 +90,6 @@ else if(mode === "hnh"){
     })
     fighterLinks = Object.values(fighterMap).sort((a,b)=> a.name.localeCompare(b.name))
 
-
 }
 
 const apiKey = JSON.parse(
@@ -119,10 +118,10 @@ console.log(`Fighters: ${fighterLinks.length}`)
 
 //nuclear safety, delete to unleash hell
 
-fighterLinks = fighterLinks.slice(0, 10)
-console.log('only attempting 10 today :-)')
-console.log(fighterLinks)
-process.exit()
+// fighterLinks = fighterLinks.slice(0, 10)
+// console.log('only attempting 10 today :-)')
+// console.log(fighterLinks)
+// process.exit()
 
 if (resumeId > -1) {
     var continueIndex = fighterLinks.findIndex(fl => fl.id === resumeId)
