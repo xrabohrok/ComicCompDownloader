@@ -69,6 +69,7 @@ else if(mode === "hnh"){
             }]
         ]
     }).flat(1)
+
     var fighterMap = {}
     fighterListing.forEach(l => {
         if(!(l.fighter in fighterMap)){
@@ -166,6 +167,7 @@ try {
                 const roundFolder = `${roundNumber}-${safeTitle}`
                 comicBuffer.push(safeTitle)
                 maybeMakeDir(`./${ouputBaseDir}/${fighter.name}/${roundFolder}`)
+                var firstResponse = false
                 for (var i = 0; i < result.data.data.images.length; i += 1) {
 
                     var listing = result.data.data.images[i]
@@ -173,7 +175,15 @@ try {
                     comicBuffer.push(`\t ${result.data.data.images[i].description == "null" || !result.data.data.images[i].description
                         ? '--' : result.data.data.images[i].description}`)
                     var extension = listing.type.split('\/')[1]
-                    downloadSet.push(downloadFile(listing.link, `./${ouputBaseDir}/${fighter.name}/${roundFolder}/${i}.${extension}`).catch(
+                    downloadSet.push(downloadFile(listing.link, `./${ouputBaseDir}/${fighter.name}/${roundFolder}/${i}.${extension}`)
+                    .then((response) => {
+                        if(firstResponse){
+                            var rateLeft = `INFO - Requests left: ${response?.headers?.X-RateLimit-UserLimit}`
+                            console.log(rateLeft)
+                            errorBuffer.push(rateLeft)
+                        }
+                    })
+                    .catch(
                         (error) => {
                             if (error.response) {
                                 errorBuffer.push[`${fighter.name} - ERROR - ${error.response.status}`]
